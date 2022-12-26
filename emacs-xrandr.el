@@ -45,8 +45,8 @@
             (setq preferred (match-string 5 line))
             (when (and device width height)
               (if primary-p
-                  (when (not (length= current 0)) (push (list device width height "primary") parsed-lines))
-                (push (list device width height nil) parsed-lines))))))))
+                  (when (not (length= current 0)) (push (list device width height preferred "primary") parsed-lines))
+                (push (list device width height preferred nil) parsed-lines))))))))
     (nreverse parsed-lines)))
 
 (defun get-available-primary-devices (parsed-lines)
@@ -57,11 +57,23 @@
   "Get unique available non-primary devices."
   (cl-remove-if (lambda (x) (car (last x))) parsed-lines))
 
+(defun get-device (parsed-lines device)
+  "Get all configs for a given device"
+  (cl-remove-if-not (lambda (x) (string= (car x) device)) parsed-lines))
+
 (defun get-device-available-resolutions (parsed-lines device)
   "Get available resolution for a given device."
-  (let ((device-parsed-lines (cl-remove-if-not (lambda (x) (string= (car x) device)) parsed-lines)))
+  (let ((device-parsed-lines (get-device parsed-lines device)))
     (mapcar (lambda (x) (format "%sx%s" (cadr x) (caddr x)))
             device-parsed-lines)))
+
+(defun get-device-preferred-resolution (parsed-lines device)
+  "Get the preferred resolution for a given device."
+  (let* ((device-parsed-lines (get-device parsed-lines device))
+         (device-preferred (car (cl-remove-if-not (lambda (x) (string= (cadddr x) "+")) device-parsed-lines))))
+    (format "%sx%s"
+            (cadr device-preferred)
+            (caddr device-preferred))))
 
 (defun xrandr ()
   "Run xrandr with selected device and resolution."
@@ -72,8 +84,11 @@
          (primary-resolution-width (string-to-number (cadr primary-device)))
          (primary-resolution-height (string-to-number (caddr primary-device)))
          (device-name (completing-read "Available devices: " (get-available-nonprimary-devices parsed-lines)))
-         (resolution (string-split (completing-read "Available resolutions: "
-                                                    (get-device-available-resolutions parsed-lines device-name)) "x"))
+         (preferred-resolution (get-device-preferred-resolution parsed-lines device-name))
+         (resolution (string-split (completing-read (format-prompt "Available Resolutions"
+                                                                   preferred-resolution)
+                                                    (get-device-available-resolutions parsed-lines device-name)
+                                                    nil t nil nil preferred-resolution) "x"))
          (resolution-width (string-to-number (car resolution)))
          (resolution-height (string-to-number (cadr resolution)))
          (width-ratio (/ (float primary-resolution-width) resolution-width))
