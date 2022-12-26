@@ -1,5 +1,13 @@
 ;;; emacs-xrandr.el --- emacs run xrandr  -*- lexical-binding: t; -*-
 
+(defcustom xrandr-position t
+  "Xrandr screen postion."
+  :type '(choice (const :tag "Mirror" t)
+                 (const :tag "Top" top)
+                 (const :tag "Bottom" bottom)
+                 (const :tag "Left" left)
+                 (const :tag "Right" right)))
+
 (defun parse-xrander ()
   "Parse xrander output."
   (let* ((xrandr-output (shell-command-to-string "xrandr"))
@@ -70,23 +78,40 @@
          (resolution-height (string-to-number (cadr resolution)))
          (width-ratio (/ (float primary-resolution-width) resolution-width))
          (height-ratio (/ (float primary-resolution-height) resolution-height))
-         (scale-ratio (if (> width-ratio height-ratio) width-ratio height-ratio))
-         (x-offset (if (< width-ratio height-ratio)
-                       (/ (- resolution-width
-                             (/ (float primary-resolution-width) scale-ratio))
-                          2.0)
-                     0))
-         (y-offset (if (> width-ratio height-ratio)
-                       (/ (- resolution-height
-                             (/ (float primary-resolution-height) scale-ratio))
-                          2.0)
-                     0)))
+         (scale-ratio (if (> width-ratio height-ratio) width-ratio height-ratio)))
+    (pcase xrandr-position
+      ('top (progn
+              (setq x-offset 0
+                    y-offset primary-resolution-height
+                    offset (format "%dx-%d" x-offset y-offset))))
+      ('bottom (progn
+                 (setq x-offset 0
+                       y-offset primary-resolution-height
+                       offset (format "%dx%d" x-offset y-offset))))
+      ('left (progn
+               (setq x-offset primary-resolution-width
+                     y-offset 0
+                     offset (format "-%dx%d" x-offset y-offset))))
+      ('right (progn
+                (setq x-offset primary-resolution-width
+                      y-offset 0
+                      offset (format "%dx%d" x-offset y-offset))))
+      (_ (progn
+           (setq x-offset (if (< width-ratio height-ratio)
+                              (/ (- resolution-width
+                                    (/ (float primary-resolution-width) scale-ratio))
+                                 2.0)
+                            0)
+                 y-offset (if (> width-ratio height-ratio)
+                              (/ (- resolution-height
+                                    (/ (float primary-resolution-height) scale-ratio))
+                                 2.0)
+                            0)))))
     (start-process-shell-command
-     "xrandr" nil (format "xrandr --output %s --primary --mode %dx%d --pos 0x0 --rotate normal --output %s --mode %dx%d  --scale %fx%f --pos -%dx-%d --rotate normal"
+     "xrandr" nil (format "xrandr --output %s --primary --mode %dx%d --pos 0x0 --rotate normal --output %s --mode %dx%d  --scale %fx%f --pos %s --rotate normal"
                           primary-name primary-resolution-width primary-resolution-height
                           device-name resolution-width resolution-height
-                          scale-ratio scale-ratio
-                          x-offset y-offset))))
+                          scale-ratio scale-ratio offset))))
 
 (provide 'emacs-xrandr)
 
