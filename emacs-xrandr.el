@@ -78,7 +78,10 @@
          (resolution-height (string-to-number (cadr resolution)))
          (width-ratio (/ (float primary-resolution-width) resolution-width))
          (height-ratio (/ (float primary-resolution-height) resolution-height))
-         (scale-ratio (if (> width-ratio height-ratio) width-ratio height-ratio)))
+         (scale-ratio (if (> width-ratio height-ratio) width-ratio height-ratio))
+         (x-offset 0)
+         (y-offset 0)
+         (offset "0x0"))
     (pcase xrandr-position
       ('top (progn
               (setq x-offset 0
