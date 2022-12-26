@@ -114,6 +114,15 @@
                           device-name resolution-width resolution-height
                           scale-ratio scale-ratio offset))))
 
+(defun xrandr-set-position (position)
+  "Set external screen position interactively."
+  (interactive
+   (list
+    (completing-read
+     "External screen postion: "
+     '(mirror top bottom left right))))
+  (setq xrandr-position (intern position)))
+
 (provide 'emacs-xrandr)
 
 ;;; emacs-xrandr.el ends here

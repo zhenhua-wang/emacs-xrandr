@@ -14,9 +14,4 @@ Use emacs to configure xrandr.
 Simply call `xrandr` interactively, you would be prompted to choose from a list of supported devices and corresponding resolutions.
 
 
-`xrandr-position` can be used to set screen position. It has five options:
-1. `'mirror` - mirror
-2. `'top` - top
-3. `'bottom` - bottom
-4. `'left` - left
-5. `'right` - right
+The external screen's default postion is the same as the primary screen (mirror). Use `xrandr-set-position` to change it.
