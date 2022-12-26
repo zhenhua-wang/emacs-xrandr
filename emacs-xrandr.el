@@ -101,13 +101,13 @@
                       offset (format "%dx%d" x-offset y-offset))))
       ('mirror (progn
                  (setq x-offset (if (< width-ratio height-ratio)
-                                    (/ (- resolution-width
-                                          (/ (float primary-resolution-width) scale-ratio))
+                                    (/ (- (* resolution-width scale-ratio)
+                                          primary-resolution-width)
                                        2.0)
                                   0)
                        y-offset (if (> width-ratio height-ratio)
-                                    (/ (- resolution-height
-                                          (/ (float primary-resolution-height) scale-ratio))
+                                    (/ (- (* resolution-height scale-ratio)
+                                          primary-resolution-height)
                                        2.0)
                                   0)
                        offset (format "-%dx-%d" x-offset y-offset)))))
