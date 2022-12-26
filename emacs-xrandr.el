@@ -1,8 +1,8 @@
 ;;; emacs-xrandr.el --- emacs run xrandr  -*- lexical-binding: t; -*-
 
-(defcustom xrandr-position t
+(defcustom xrandr-position 'mirror
   "Xrandr screen postion."
-  :type '(choice (const :tag "Mirror" t)
+  :type '(choice (const :tag "Mirror" mirror)
                  (const :tag "Top" top)
                  (const :tag "Bottom" bottom)
                  (const :tag "Left" left)
@@ -96,17 +96,18 @@
                 (setq x-offset primary-resolution-width
                       y-offset 0
                       offset (format "%dx%d" x-offset y-offset))))
-      (_ (progn
-           (setq x-offset (if (< width-ratio height-ratio)
-                              (/ (- resolution-width
-                                    (/ (float primary-resolution-width) scale-ratio))
-                                 2.0)
-                            0)
-                 y-offset (if (> width-ratio height-ratio)
-                              (/ (- resolution-height
-                                    (/ (float primary-resolution-height) scale-ratio))
-                                 2.0)
-                            0)))))
+      ('mirror (progn
+                 (setq x-offset (if (< width-ratio height-ratio)
+                                    (/ (- resolution-width
+                                          (/ (float primary-resolution-width) scale-ratio))
+                                       2.0)
+                                  0)
+                       y-offset (if (> width-ratio height-ratio)
+                                    (/ (- resolution-height
+                                          (/ (float primary-resolution-height) scale-ratio))
+                                       2.0)
+                                  0)
+                       offset (format "-%dx-%d" x-offset y-offset)))))
     (start-process-shell-command
      "xrandr" nil (format "xrandr --output %s --primary --mode %dx%d --pos 0x0 --rotate normal --output %s --mode %dx%d  --scale %fx%f --pos %s --rotate normal"
                           primary-name primary-resolution-width primary-resolution-height

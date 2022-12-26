@@ -15,7 +15,7 @@ Simply call `xrandr` interactively, you would be prompted to choose from a list 
 
 
 `xrandr-position` can be used to set screen position. It has five options:
-1. `t` - mirror
+1. `'mirror` - mirror
 2. `'top` - top
 3. `'bottom` - bottom
 4. `'left` - left
