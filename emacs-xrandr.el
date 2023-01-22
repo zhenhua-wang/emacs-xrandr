@@ -67,7 +67,7 @@
 (defun get-device-available-resolutions (parsed-lines device)
   "Get available resolution for a given device."
   (let ((device-parsed-lines (get-device parsed-lines device)))
-    (mapcar (lambda (x) (format "%sx%s" (cadr x) (caddr x)))
+    (mapcar (lambda (x) (list (format "%sx%s" (cadr x) (caddr x)) (cadddr x)))
             device-parsed-lines)))
 
 (defun get-device-preferred-resolution (parsed-lines device)
@@ -78,6 +78,40 @@
             (cadr device-preferred)
             (caddr device-preferred))))
 
+(defun xrandr--device-type-annotations (s)
+  (let ((item (assoc s minibuffer-completion-table)))
+    (when item (concat "     " (car (last item))))))
+
+(defun xrandr--resolution-annotations (s)
+  (let ((item (assoc s minibuffer-completion-table)))
+    (when item (concat "     " (cadr item)))))
+
+(defun xrandr--device-config (primary-resolution-width
+                              primary-resolution-height
+                              resolution-width
+                              resolution-height)
+  (let* ((width-ratio (/ (float primary-resolution-width) resolution-width))
+         (height-ratio (/ (float primary-resolution-height) resolution-height))
+         (scale-ratio (if (> width-ratio height-ratio) width-ratio height-ratio))
+         (scale (format "%fx%f" scale-ratio scale-ratio))
+         (pos (pcase xrandr-position
+                ('top (format "%dx-%d" 0 primary-resolution-height))
+                ('bottom (format "%dx%d" 0 primary-resolution-height))
+                ('left (format "-%dx%d" primary-resolution-width 0))
+                ('right (format "%dx%d" primary-resolution-width 0))
+                ('mirror (let* ((x-offset (if (< width-ratio height-ratio)
+                                              (/ (- (* resolution-width scale-ratio)
+                                                    primary-resolution-width)
+                                                 2.0)
+                                            0))
+                                (y-offset (if (> width-ratio height-ratio)
+                                              (/ (- (* resolution-height scale-ratio)
+                                                    primary-resolution-height)
+                                                 2.0)
+                                            0)))
+                           (format "-%dx-%d" x-offset y-offset))))))
+    (list scale pos)))
+
 (defun xrandr ()
   "Run xrandr with selected device and resolution."
   (interactive)
@@ -86,54 +120,8 @@
          (primary-name (car primary-device))
          (primary-resolution-width (string-to-number (cadr primary-device)))
          (primary-resolution-height (string-to-number (caddr primary-device)))
-         (device-name (completing-read "Available devices: " (get-available-nonprimary-devices parsed-lines)))
-         (preferred-resolution (get-device-preferred-resolution parsed-lines device-name))
-         (resolution (string-split (completing-read (format-prompt "Available Resolutions"
-                                                                   preferred-resolution)
-                                                    (get-device-available-resolutions parsed-lines device-name)
-                                                    nil t nil nil preferred-resolution) "x"))
-         (resolution-width (string-to-number (car resolution)))
-         (resolution-height (string-to-number (cadr resolution)))
-         (width-ratio (/ (float primary-resolution-width) resolution-width))
-         (height-ratio (/ (float primary-resolution-height) resolution-height))
-         (scale-ratio (if (> width-ratio height-ratio) width-ratio height-ratio))
-         (x-offset 0)
-         (y-offset 0)
-         (offset "0x0"))
-    (pcase xrandr-position
-      ('top (progn
-              (setq x-offset 0
-                    y-offset primary-resolution-height
-                    offset (format "%dx-%d" x-offset y-offset))))
-      ('bottom (progn
-                 (setq x-offset 0
-                       y-offset primary-resolution-height
-                       offset (format "%dx%d" x-offset y-offset))))
-      ('left (progn
-               (setq x-offset primary-resolution-width
-                     y-offset 0
-                     offset (format "-%dx%d" x-offset y-offset))))
-      ('right (progn
-                (setq x-offset primary-resolution-width
-                      y-offset 0
-                      offset (format "%dx%d" x-offset y-offset))))
-      ('mirror (progn
-                 (setq x-offset (if (< width-ratio height-ratio)
-                                    (/ (- (* resolution-width scale-ratio)
-                                          primary-resolution-width)
-                                       2.0)
-                                  0)
-                       y-offset (if (> width-ratio height-ratio)
-                                    (/ (- (* resolution-height scale-ratio)
-                                          primary-resolution-height)
-                                       2.0)
-                                  0)
-                       offset (format "-%dx-%d" x-offset y-offset)))))
-    (start-process-shell-command
-     "xrandr" nil (format "xrandr --output %s --primary --mode %dx%d --pos 0x0 --rotate normal --output %s --mode %dx%d  --scale %fx%f --pos %s --rotate normal"
-                          primary-name primary-resolution-width primary-resolution-height
-                          device-name resolution-width resolution-height
-                          scale-ratio scale-ratio offset))))
+         (completion-extra-properties '(:annotation-function xrandr--device-type-annotations))
+         (device-name (completing-read "Available devices: " parsed-lines)))
     (if (string= device-name primary-name)
         (progn
           (start-process-shell-command
@@ -141,6 +129,25 @@
                                         (when xrandr-external-monitor (concat " --output " xrandr-external-monitor " --off")))
                                 primary-name primary-resolution-width primary-resolution-height))
           (setq xrandr-external-monitor nil))
+      (let* ((preferred-resolution (get-device-preferred-resolution parsed-lines device-name))
+             (completion-extra-properties '(:annotation-function xrandr--resolution-annotations))
+             (resolution (string-split (completing-read (format-prompt "Available Resolutions"
+                                                                       preferred-resolution)
+                                                        (get-device-available-resolutions parsed-lines device-name)
+                                                        nil t nil nil preferred-resolution) "x"))
+             (resolution-width (string-to-number (car resolution)))
+             (resolution-height (string-to-number (cadr resolution)))
+             (device-config (xrandr--device-config primary-resolution-width
+                                                   primary-resolution-height
+                                                   resolution-width
+                                                   resolution-height))
+             (scale (car device-config))
+             (pos (cadr device-config)))
+        (start-process-shell-command
+         "xrandr" nil (format "xrandr --output %s --primary --mode %dx%d --pos 0x0 --rotate normal --output %s --mode %dx%d  --scale %s --pos %s --rotate normal"
+                              primary-name primary-resolution-width primary-resolution-height
+                              device-name resolution-width resolution-height
+                              scale pos))
         (setq xrandr-external-monitor device-name)))))
 
 (defun xrandr-set-position (position)
