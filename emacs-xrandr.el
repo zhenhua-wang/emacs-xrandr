@@ -8,6 +8,9 @@
                  (const :tag "Left" left)
                  (const :tag "Right" right)))
 
+(defvar xrandr-external-monitor nil
+  "Pre-enbaled external device")
+
 (defun parse-xrander ()
   "Parse xrander output."
   (let* ((xrandr-output (shell-command-to-string "xrandr"))
@@ -131,6 +134,14 @@
                           primary-name primary-resolution-width primary-resolution-height
                           device-name resolution-width resolution-height
                           scale-ratio scale-ratio offset))))
+    (if (string= device-name primary-name)
+        (progn
+          (start-process-shell-command
+           "xrandr" nil (format (concat "xrandr --output %s --primary --mode %dx%d --pos 0x0 --rotate normal"
+                                        (when xrandr-external-monitor (concat " --output " xrandr-external-monitor " --off")))
+                                primary-name primary-resolution-width primary-resolution-height))
+          (setq xrandr-external-monitor nil))
+        (setq xrandr-external-monitor device-name)))))
 
 (defun xrandr-set-position (position)
   "Set external screen position interactively."
