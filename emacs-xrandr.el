@@ -52,27 +52,27 @@
                 (push (list device width height preferred nil) parsed-lines))))))))
     (nreverse parsed-lines)))
 
-(defun get-available-primary-devices (parsed-lines)
+(defun xrandr-get-available-primary-devices (parsed-lines)
   "Get available primary devices."
   (car (cl-remove-if-not (lambda (x) (car (last x))) parsed-lines)))
 
-(defun get-available-nonprimary-devices (parsed-lines)
+(defun xrandr-get-available-nonprimary-devices (parsed-lines)
   "Get unique available non-primary devices."
   (cl-remove-if (lambda (x) (car (last x))) parsed-lines))
 
-(defun get-device (parsed-lines device)
+(defun xrandr-get-device (parsed-lines device)
   "Get all configs for a given device"
   (cl-remove-if-not (lambda (x) (string= (car x) device)) parsed-lines))
 
-(defun get-device-available-resolutions (parsed-lines device)
+(defun xrandr-get-device-available-resolutions (parsed-lines device)
   "Get available resolution for a given device."
-  (let ((device-parsed-lines (get-device parsed-lines device)))
+  (let ((device-parsed-lines (xrandr-get-device parsed-lines device)))
     (mapcar (lambda (x) (list (format "%sx%s" (cadr x) (caddr x)) (cadddr x)))
             device-parsed-lines)))
 
-(defun get-device-preferred-resolution (parsed-lines device)
+(defun xrandr-get-device-preferred-resolution (parsed-lines device)
   "Get the preferred resolution for a given device."
-  (let* ((device-parsed-lines (get-device parsed-lines device))
+  (let* ((device-parsed-lines (xrandr-get-device parsed-lines device))
          (device-preferred (car (cl-remove-if-not (lambda (x) (string= (cadddr x) "+")) device-parsed-lines))))
     (format "%sx%s"
             (cadr device-preferred)
@@ -116,7 +116,7 @@
   "Run xrandr with selected device and resolution."
   (interactive)
   (let* ((parsed-lines (parse-xrander))
-         (primary-device (get-available-primary-devices parsed-lines))
+         (primary-device (xrandr-get-available-primary-devices parsed-lines))
          (primary-name (car primary-device))
          (primary-resolution-width (string-to-number (cadr primary-device)))
          (primary-resolution-height (string-to-number (caddr primary-device)))
@@ -129,11 +129,11 @@
                                         (when xrandr-external-monitor (concat " --output " xrandr-external-monitor " --off")))
                                 primary-name primary-resolution-width primary-resolution-height))
           (setq xrandr-external-monitor nil))
-      (let* ((preferred-resolution (get-device-preferred-resolution parsed-lines device-name))
+      (let* ((preferred-resolution (xrandr-get-device-preferred-resolution parsed-lines device-name))
              (completion-extra-properties '(:annotation-function xrandr--resolution-annotations))
              (resolution (string-split (completing-read (format-prompt "Available Resolutions"
                                                                        preferred-resolution)
-                                                        (get-device-available-resolutions parsed-lines device-name)
+                                                        (xrandr-get-device-available-resolutions parsed-lines device-name)
                                                         nil t nil nil preferred-resolution) "x"))
              (resolution-width (string-to-number (car resolution)))
              (resolution-height (string-to-number (cadr resolution)))
