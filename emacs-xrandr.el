@@ -9,7 +9,7 @@
                  (const :tag "Right" right)))
 
 (defvar xrandr-external-monitor nil
-  "Pre-enbaled external device")
+  "Previously enabled external device")
 
 (defun parse-xrander ()
   "Parse xrander output."
