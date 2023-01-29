@@ -121,7 +121,7 @@
          (primary-resolution-width (string-to-number (cadr primary-device)))
          (primary-resolution-height (string-to-number (caddr primary-device)))
          (completion-extra-properties '(:annotation-function xrandr--device-type-annotations))
-         (device-name (completing-read "Available devices: " parsed-lines)))
+         (device-name (completing-read "Available devices: " parsed-lines nil t)))
     (if (string= device-name primary-name)
         (progn
           (start-process-shell-command
@@ -156,7 +156,8 @@
    (list
     (completing-read
      "External screen postion: "
-     '(mirror top bottom left right))))
+     '(mirror top bottom left right)
+     nil t)))
   (setq xrandr-position (intern position)))
 
 (provide 'emacs-xrandr)
