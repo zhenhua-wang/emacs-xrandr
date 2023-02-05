@@ -79,14 +79,16 @@
             (caddr device-preferred))))
 
 (defun xrandr--device-type-annotations (s)
-  (let ((item (assoc s minibuffer-completion-table)))
+  (let* ((item (assoc s minibuffer-completion-table))
+         (ann-primary (car (last item))))
     (when item (concat (propertize " " 'display `(space :align-to center))
-                       (car (last item))))))
+                       (when ann-primary (propertize ann-primary 'face 'font-lock-type-face))))))
 
 (defun xrandr--resolution-annotations (s)
-  (let ((item (assoc s minibuffer-completion-table)))
+  (let* ((item (assoc s minibuffer-completion-table))
+         (ann-res (cadr item)))
     (when item (concat (propertize " " 'display `(space :align-to center))
-                       (cadr item)))))
+                       (when ann-res (propertize ann-res 'face 'font-lock-type-face))))))
 
 (defun xrandr--device-config (primary-resolution-width
                               primary-resolution-height
