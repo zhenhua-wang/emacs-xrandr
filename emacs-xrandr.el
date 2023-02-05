@@ -80,11 +80,13 @@
 
 (defun xrandr--device-type-annotations (s)
   (let ((item (assoc s minibuffer-completion-table)))
-    (when item (concat "     " (car (last item))))))
+    (when item (concat (propertize " " 'display `(space :align-to center))
+                       (car (last item))))))
 
 (defun xrandr--resolution-annotations (s)
   (let ((item (assoc s minibuffer-completion-table)))
-    (when item (concat "     " (cadr item)))))
+    (when item (concat (propertize " " 'display `(space :align-to center))
+                       (cadr item)))))
 
 (defun xrandr--device-config (primary-resolution-width
                               primary-resolution-height
