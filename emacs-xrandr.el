@@ -26,13 +26,7 @@
                      "connected"
                      (+ space)))
          (parsed-lines '()))
-    (let ((device nil)
-          (primary-p nil)
-          (width nil)
-          (height nil)
-          (freq nil)
-          (current nil)
-          (preferred nil))
+    (let (device primary-p width height freq current preferred)
       (dolist (line xrandr-lines)
         (cond
          ((string-match rxconn line)
