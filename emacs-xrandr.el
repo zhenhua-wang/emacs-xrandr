@@ -113,6 +113,8 @@
 (defun xrandr ()
   "Run xrandr with selected device and resolution."
   (interactive)
+  (unless (executable-find "xrandr")
+    (error "Cannot find xrandr command in path"))
   (let* ((parsed-lines (parse-xrander))
          (primary-device (xrandr-get-available-primary-devices parsed-lines))
          (primary-name (car primary-device))
